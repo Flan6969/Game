@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Tap-to-Jump Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Set up the scene, camera, and renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Create the player (a cube)
+        const playerGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const playerMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        player.position.set(0, 0.5, 0);
+        scene.add(player);
+
+        // Create the path (a flat plane)
+        const pathGeometry = new THREE.PlaneGeometry(10, 100);
+        const pathMaterial = new THREE.MeshBasicMaterial({ color: 0x888888, side: THREE.DoubleSide });
+        const path = new THREE.Mesh(pathGeometry, pathMaterial);
+        path.rotation.x = Math.PI / 2;
+        path.position.z = -50;
+        scene.add(path);
+
+        // Create an obstacle (a cube)
+        const obstacleGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const obstacleMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const obstacle = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
+        obstacle.position.set(0, 0.5, -20);
+        scene.add(obstacle);
+
+        // Position the camera
+        camera.position.set(0, 5, 10);
+        camera.lookAt(player.position);
+
+        // Game variables
+        let isJumping = false;
+        let velocityY = 0;
+        const gravity = -0.05;
+        const jumpForce = 0.2;
+        let gameOver = false;
+
+        // Handle tap to jump
+        document.addEventListener('touchstart', () => {
+            if (!isJumping && !gameOver) {
+                velocityY = jumpForce;
+                isJumping = true;
+            }
+        });
+
+        // Animation loop
+        function animate() {
+            if (gameOver) return;
+
+            requestAnimationFrame(animate);
+
+            // Move player forward
+            player.position.z -= 0.1;
+
+            // Apply gravity and jump
+            velocityY += gravity;
+            player.position.y += velocityY;
+            if (player.position.y <= 0.5) {
+                player.position.y = 0.5;
+                velocityY = 0;
+                isJumping = false;
+            }
+
+            // Move camera with player
+            camera.position.z = player.position.z + 10;
+
+            // Check collision with obstacle
+            const dx = player.position.x - obstacle.position.x;
+            const dz = player.position.z - obstacle.position.z;
+            if (Math.abs(dx) < 1 && Math.abs(dz) < 1 && player.position.y < 1.5) {
+                gameOver = true;
+                alert('Game Over! Refresh to restart.');
+            }
+
+            // Check if player falls
+            if (player.position.y < -5) {
+                gameOver = true;
+                alert('Game Over! Refresh to restart.');
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
